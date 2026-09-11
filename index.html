@@ -12,81 +12,131 @@
 <div class="app">
 
   <aside class="sidebar">
-    <div class="brand">Study<span>Snap</span> 📚</div>
 
-    <nav>
-      <button class="nav-item active" onclick="showPage('dashboard', this)">🏠 Dashboard</button>
-      <button class="nav-item" onclick="showPage('sets', this)">📚 Study Sets</button>
-      <button class="nav-item" onclick="showPage('flashcards', this)">🧠 Flashcards</button>
-      <button class="nav-item" onclick="showPage('quizzes', this)">📝 Quizzes</button>
-      <button class="nav-item" onclick="showPage('progress', this)">📊 Progress</button>
-    </nav>
-
-    <div class="sidebar-bottom">
-      <button class="nav-item" onclick="showPage('settings', this)">⚙️ Settings</button>
-      <div class="pro-box">
-        <strong>StudySnap Pro</strong>
-        <p>Unlock unlimited studying.</p>
-        <button onclick="alert('Pro is coming soon!')">View Pro →</button>
+    <div class="logo">
+      <div class="logo-icon">S</div>
+      <div>
+        <strong>StudySnap</strong>
+        <small>LOCK IN.</small>
       </div>
     </div>
+
+    <div class="nav-title">WORKSPACE</div>
+
+    <button class="nav active" onclick="showPage('home', this)">
+      <span>⌂</span> Dashboard
+    </button>
+
+    <button class="nav" onclick="showPage('sets', this)">
+      <span>▣</span> Study Sets
+    </button>
+
+    <button class="nav" onclick="showPage('flashcards', this)">
+      <span>◆</span> Flashcards
+    </button>
+
+    <button class="nav" onclick="showPage('quiz', this)">
+      <span>✓</span> Quizzes
+    </button>
+
+    <button class="nav" onclick="showPage('progress', this)">
+      <span>↗</span> Progress
+    </button>
+
+    <div class="side-bottom">
+
+      <div class="pro-card">
+        <div class="pro-badge">PRO</div>
+        <h3>Study smarter.</h3>
+        <p>Unlimited AI study tools are coming.</p>
+        <button onclick="alert('StudySnap Pro is coming soon 🔥')">
+          Upgrade →
+        </button>
+      </div>
+
+      <button class="nav" onclick="showPage('settings', this)">
+        <span>⚙</span> Settings
+      </button>
+
+    </div>
+
   </aside>
 
 
   <main class="main">
 
     <header class="topbar">
-      <div>
-        <div class="mobile-brand">StudySnap 📚</div>
+
+      <div class="mobile-logo">
+        Study<span>Snap</span>
       </div>
 
-      <button class="profile" onclick="showPage('settings')">
-        <span>👤</span>
-        <div>
-          <strong>Student</strong>
-          <small>Free Plan</small>
-        </div>
-      </button>
+      <div class="top-actions">
+        <button class="search">⌕ Search</button>
+
+        <button class="profile" onclick="showPage('settings')">
+          <div class="avatar">R</div>
+          <div>
+            <strong>Student</strong>
+            <small>Free</small>
+          </div>
+        </button>
+      </div>
+
     </header>
 
 
     <!-- DASHBOARD -->
 
-    <section id="dashboard" class="page active-page">
+    <section id="home" class="page active">
 
-      <div class="welcome">
+      <div class="hero">
+
         <div>
-          <p class="eyebrow">DASHBOARD</p>
-          <h1>Ready to lock in? 🔥</h1>
-          <p>Turn your notes into a smarter study session.</p>
+          <div class="tag">STUDY MODE: ON</div>
+
+          <h1>
+            Lock in.<br>
+            <span>Get smarter.</span>
+          </h1>
+
+          <p>
+            Drop your notes. StudySnap turns them into
+            study material in seconds.
+          </p>
         </div>
+
+        <div class="hero-mark">
+          <span>SS</span>
+        </div>
+
       </div>
 
 
       <div class="stats">
 
         <div class="stat">
-          <span>🔥</span>
+          <small>STREAK</small>
           <strong id="streak">0</strong>
-          <small>Day streak</small>
+          <span>🔥 days</span>
         </div>
 
         <div class="stat">
-          <span>📚</span>
+          <small>STUDY SETS</small>
           <strong id="setCount">0</strong>
-          <small>Study sets</small>
+          <span>📚 saved</span>
         </div>
 
         <div class="stat">
-          <span>🧠</span>
-          <strong id="cardCount">0</strong>
-          <small>Cards studied</small>
+          <small>ACTIVITY</small>
+          <strong id="activityCount">0</strong>
+          <span>⚡ actions</span>
         </div>
 
         <div class="stat">
-          <span>🎯</span>
+          <small>QUIZZES</small>
           <strong id="quizCount">0</strong>
-          <small>Quizzes taken</small>
+          <span>🎯 completed</span>
         </div>
 
       </div>
@@ -94,59 +144,71 @@
 
       <div class="generator">
 
-        <div class="generator-header">
+        <div class="section-heading">
           <div>
-            <p class="eyebrow">STUDY GENERATOR</p>
-            <h2>Turn notes into study material</h2>
+            <div class="tag">CREATE</div>
+            <h2>Turn your notes into ammo.</h2>
           </div>
 
-          <span class="free-tag">FREE</span>
+          <span class="free">FREE</span>
         </div>
-
-
-        <textarea
-          id="notes"
-          placeholder="Paste your class notes here...
-
-Example:
-Cellular respiration is the process cells use to release energy from glucose. It occurs mainly in the mitochondria. Glucose and oxygen are reactants. Carbon dioxide, water, and ATP are products."
-        ></textarea>
 
 
         <input
           id="setName"
-          type="text"
-          placeholder="Study set name (optional)"
+          placeholder="Name this study set..."
         >
 
 
-        <div class="generator-buttons">
-          <button class="primary" onclick="generateStudyGuide()">✨ Study Guide</button>
-          <button class="secondary" onclick="generateFlashcards()">🧠 Flashcards</button>
-          <button class="secondary" onclick="generateQuiz()">📝 Quiz</button>
-          <button class="ghost" onclick="clearGenerator()">Clear</button>
+        <textarea
+          id="notes"
+          placeholder="Paste your notes here...
+
+Example:
+Cellular respiration is the process cells use to release energy from glucose. It mainly occurs in the mitochondria. Oxygen and glucose are reactants. Carbon dioxide, water, and ATP are products."
+        ></textarea>
+
+
+        <div class="controls">
+
+          <button class="main-btn" onclick="generateStudyGuide()">
+            ✦ Study Guide
+          </button>
+
+          <button onclick="generateFlashcards()">
+            ◆ Flashcards
+          </button>
+
+          <button onclick="generateQuiz()">
+            ✓ Quiz
+          </button>
+
+          <button class="clear" onclick="clearAll()">
+            Clear
+          </button>
+
         </div>
 
       </div>
 
 
-      <div class="result-card">
+      <div class="result">
 
-        <div class="result-top">
+        <div class="result-header">
           <div>
-            <p class="eyebrow">RESULT</p>
+            <div class="tag">OUTPUT</div>
             <h2>Your study material</h2>
           </div>
 
-          <button class="copy-btn" onclick="copyResult()">Copy</button>
+          <button onclick="copyResult()">Copy</button>
         </div>
 
         <div id="output">
 
           <div class="empty">
-            <div>✨</div>
-            <h3>Nothing here yet</h3>
-            <p>Paste your notes and choose a study mode.</p>
+            <div class="empty-icon">⚡</div>
+            <h3>Nothing generated yet.</h3>
+            <p>Paste your notes above and choose a mode.</p>
           </div>
 
         </div>
@@ -160,13 +222,13 @@ Cellular respiration is the process cells use to release energy from glucose. It
 
     <section id="sets" class="page">
 
-      <div class="page-title">
-        <p class="eyebrow">LIBRARY</p>
+      <div class="page-heading">
+        <div class="tag">LIBRARY</div>
         <h1>Study Sets</h1>
-        <p>Your saved study material.</p>
+        <p>Everything you've saved.</p>
       </div>
 
-      <div id="setsContainer" class="set-grid"></div>
+      <div id="setsContainer" class="cards"></div>
 
     </section>
 
@@ -175,18 +237,20 @@ Cellular respiration is the process cells use to release energy from glucose. It
 
     <section id="flashcards" class="page">
 
-      <div class="page-title">
-        <p class="eyebrow">MEMORY</p>
+      <div class="page-heading">
+        <div class="tag">MEMORY</div>
         <h1>Flashcards</h1>
-        <p>Practice concepts using active recall.</p>
+        <p>Test yourself without looking at your notes.</p>
       </div>
 
-      <div id="flashcardArea" class="flashcard-area">
+      <div id="flashcardArea">
+
         <div class="empty">
-          <div>🧠</div>
-          <h3>No flashcards yet</h3>
-          <p>Create flashcards from your notes on the Dashboard.</p>
+          <div class="empty-icon">◆</div>
+          <h3>No flashcards yet.</h3>
+          <p>Create flashcards from your Dashboard.</p>
         </div>
+
       </div>
 
     </section>
@@ -194,20 +258,22 @@ Cellular respiration is the process cells use to release energy from glucose. It
 
     <!-- QUIZZES -->
 
-    <section id="quizzes" class="page">
+    <section id="quiz" class="page">
 
-      <div class="page-title">
-        <p class="eyebrow">PRACTICE</p>
+      <div class="page-heading">
+        <div class="tag">TEST YOURSELF</div>
         <h1>Quizzes</h1>
-        <p>Test yourself instead of rereading everything.</p>
+        <p>See what you actually remember.</p>
       </div>
 
       <div id="quizArea">
+
         <div class="empty">
-          <div>📝</div>
-          <h3>No quiz yet</h3>
+          <div class="empty-icon">✓</div>
+          <h3>No quiz yet.</h3>
           <p>Create one from the Dashboard.</p>
         </div>
+
       </div>
 
     </section>
@@ -217,20 +283,24 @@ Cellular respiration is the process cells use to release energy from glucose. It
 
     <section id="progress" class="page">
 
-      <div class="page-title">
-        <p class="eyebrow">YOUR STATS</p>
-        <h1>Progress 📊</h1>
-        <p>Keep track of your studying.</p>
+      <div class="page-heading">
+        <div class="tag">STATS</div>
+        <h1>Your Progress</h1>
+        <p>Keep stacking study sessions.</p>
       </div>
 
-      <div class="progress-card">
-        <h2>Keep going.</h2>
-        <div class="progress-number" id="progressNumber">0</div>
-        <p>total study activities</p>
+      <div class="progress-box">
 
-        <div class="progress-bar">
-          <div id="progressFill"></div>
+        <div class="big-number" id="progressNumber">0</div>
+
+        <h2>study activities</h2>
+
+        <div class="bar">
+          <div id="progressBar"></div>
         </div>
+
+        <p>Keep going. Consistency wins.</p>
+
       </div>
 
     </section>
@@ -240,24 +310,32 @@ Cellular respiration is the process cells use to release energy from glucose. It
 
     <section id="settings" class="page">
 
-      <div class="page-title">
-        <p class="eyebrow">ACCOUNT</p>
-        <h1>Settings ⚙️</h1>
+      <div class="page-heading">
+        <div class="tag">ACCOUNT</div>
+        <h1>Settings</h1>
+        <p>Manage your StudySnap account.</p>
       </div>
 
-      <div class="settings-card">
+      <div class="settings">
 
-        <h2>Account</h2>
-
-        <div class="setting-row">
+        <div class="setting">
           <div>
-            <strong>Google Sign-In</strong>
-            <p>Coming in the next update.</p>
+            <strong>Google Account</strong>
+            <p>Cloud login is coming in a future version.</p>
           </div>
 
-          <button class="secondary" onclick="alert('Google sign-in is coming in v2.1!')">
+          <button onclick="alert('Google login coming soon 🔐')">
             Connect
           </button>
+        </div>
+
+        <div class="setting">
+          <div>
+            <strong>Account Type</strong>
+            <p>You're currently using the free version.</p>
+          </div>
+
+          <span class="free">FREE</span>
         </div>
 
       </div>
