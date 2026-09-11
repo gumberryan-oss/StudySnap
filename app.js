@@ -1,124 +1,221 @@
+"use strict";
+
 /* =========================
-   STUDYSNAP
-   Simple browser-based app
+   STUDYSNAP APP
 ========================= */
 
-let studySets = JSON.parse(
-  localStorage.getItem("studysnap_sets") || "[]"
-);
-
-let activities = Number(
-  localStorage.getItem("studysnap_activities") || "0"
-);
+let studySets = load("studysnap_sets", []);
+let activities = Number(localStorage.getItem("studysnap_activities") || 0);
+let bestScore = Number(localStorage.getItem("studysnap_best_score") || 0);
 
 let flashcards = [];
-let currentCard = 0;
+let flashcardIndex = 0;
 let showingAnswer = false;
+
+let quizQuestions = [];
+let quizIndex = 0;
+let quizScore = 0;
 
 
 /* =========================
    ELEMENTS
 ========================= */
 
-const notesInput = document.getElementById("notes");
-const setNameInput = document.getElementById("setName");
-const output = document.getElementById("output");
-const outputSection = document.getElementById("outputSection");
-const outputTitle = document.getElementById("outputTitle");
-const charCount = document.getElementById("charCount");
+const notes = document.getElementById("notes");
+const setName = document.getElementById("setName");
+const results = document.getElementById("results");
+const resultContent = document.getElementById("resultContent");
+const resultTitle = document.getElementById("resultTitle");
 
 
 /* =========================
-   NOTES CHARACTER COUNTER
+   SAFE STORAGE
 ========================= */
 
-notesInput.addEventListener("input", () => {
-  charCount.textContent = notesInput.value.length.toLocaleString();
-});
+function load(key, fallback) {
+
+  try {
+
+    const value = localStorage.getItem(key);
+
+    return value ? JSON.parse(value) : fallback;
+
+  } catch {
+
+    return fallback;
+
+  }
+
+}
+
+
+function save(key, value) {
+
+  localStorage.setItem(
+    key,
+    JSON.stringify(value)
+  );
+
+}
 
 
 /* =========================
    NAVIGATION
 ========================= */
 
-function showPage(pageId, button = null) {
+document.querySelectorAll(".nav-item").forEach(button => {
 
-  document.querySelectorAll(".page").forEach(page => {
-    page.classList.remove("active");
-  });
+  button.addEventListener("click", () => {
 
-  const page = document.getElementById(pageId);
+    const page = button.dataset.page;
 
-  if (page) {
-    page.classList.add("active");
-  }
+    document.querySelectorAll(".nav-item")
+      .forEach(item => item.classList.remove("active"));
 
-  document.querySelectorAll(".nav-item").forEach(item => {
-    item.classList.remove("active");
-  });
-
-  if (button) {
     button.classList.add("active");
-  }
 
-  if (pageId === "sets") {
-    renderSets();
-  }
+    document.querySelectorAll(".page")
+      .forEach(item => item.classList.remove("active"));
 
-  if (pageId === "progress") {
-    updateProgress();
-  }
+    document.getElementById(page)
+      .classList.add("active");
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
+    if (page === "sets") {
+      renderSets();
+    }
+
+    if (page === "progress") {
+      updateStats();
+    }
+
   });
-}
+
+});
 
 
 /* =========================
-   TEXT PROCESSING
+   PROFILE
 ========================= */
 
-function cleanText(text) {
+const profileButton =
+  document.getElementById("profileButton");
+
+const profileMenu =
+  document.getElementById("profileMenu");
+
+profileButton.addEventListener("click", event => {
+
+  event.stopPropagation();
+
+  profileMenu.classList.toggle("hidden");
+
+});
+
+
+document.addEventListener("click", event => {
+
+  if (!event.target.closest(".profile-wrap")) {
+    profileMenu.classList.add("hidden");
+  }
+
+});
+
+
+document
+  .getElementById("profileProgress")
+  .addEventListener("click", () => {
+
+    profileMenu.classList.add("hidden");
+
+    document
+      .querySelector('[data-page="progress"]')
+      .click();
+
+  });
+
+
+/* =========================
+   CHARACTER COUNTER
+========================= */
+
+notes.addEventListener("input", () => {
+
+  document.getElementById("charCount")
+    .textContent = notes.value.length.toLocaleString();
+
+});
+
+
+/* =========================
+   TOOL BUTTONS
+========================= */
+
+document
+  .getElementById("generateButton")
+  .addEventListener("click", generateStudyGuide);
+
+
+document.querySelectorAll(".tool").forEach(button => {
+
+  button.addEventListener("click", () => {
+
+    const tool = button.dataset.tool;
+
+    if (tool === "guide") {
+      generateStudyGuide();
+    }
+
+    if (tool === "flashcards") {
+      generateFlashcards();
+    }
+
+    if (tool === "quiz") {
+      generateQuiz();
+    }
+
+  });
+
+});
+
+
+/* =========================
+   TEXT ANALYSIS
+========================= */
+
+function getSentences(text) {
 
   return text
+    .replace(/\r/g, " ")
+    .replace(/\n+/g, ". ")
     .replace(/\s+/g, " ")
-    .replace(/^[•\-*]\s*/gm, "")
-    .trim();
+    .split(/(?<=[.!?])\s+/)
+    .map(x => x.trim())
+    .filter(x => x.length >= 20);
+
 }
 
 
-function splitIntoSentences(text) {
+function cleanSentence(sentence) {
 
-  return cleanText(text)
-    .split(/(?<=[.!?])\s+/)
-    .map(sentence => sentence.trim())
-    .filter(sentence => sentence.length >= 25);
+  return sentence
+    .replace(/^[-•*]\s*/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
 }
 
 
 /* =========================
-   IMPORTANT IDEA DETECTION
+   SMART IMPORTANCE SCORING
 ========================= */
 
-/*
-  This is NOT real AI yet.
+function scoreSentence(sentence) {
 
-  Instead of dumping every sentence,
-  this function scores sentences based
-  on useful study words and length.
-*/
+  const text = sentence.toLowerCase();
 
-function findImportantIdeas(text) {
+  let score = 0;
 
-  const sentences = splitIntoSentences(text);
-
-  if (sentences.length === 0) {
-    return [];
-  }
-
-  const keywords = [
+  const importantWords = [
     "important",
     "because",
     "therefore",
@@ -130,81 +227,151 @@ function findImportantIdeas(text) {
     "defined",
     "definition",
     "means",
-    "known as",
     "refers to",
+    "known as",
     "purpose",
     "function",
     "main",
+    "key",
     "include",
     "includes",
     "example",
     "difference",
     "similar",
+    "requires",
+    "produces",
+    "allows",
+    "leads to",
+    "consists",
+    "occurs",
     "energy",
     "reaction",
     "system",
     "theory",
     "law",
-    "evidence",
-    "change",
-    "increase",
-    "decrease",
-    "produces",
-    "requires",
-    "allows",
-    "helps"
+    "evidence"
   ];
 
-  const scored = sentences.map(sentence => {
+  importantWords.forEach(word => {
 
-    const lower = sentence.toLowerCase();
-
-    let score = 0;
-
-    keywords.forEach(word => {
-      if (lower.includes(word)) {
-        score += 2;
-      }
-    });
-
-    if (sentence.length >= 45) {
-      score += 1;
+    if (text.includes(word)) {
+      score += 3;
     }
-
-    if (sentence.length >= 180) {
-      score -= 1;
-    }
-
-    if (/\d/.test(sentence)) {
-      score += 1;
-    }
-
-    return {
-      sentence,
-      score
-    };
 
   });
 
-  scored.sort((a, b) => b.score - a.score);
+  /* Definitions */
 
-  const maxIdeas = Math.min(6, scored.length);
+  if (
+    /\bis\b/i.test(sentence) ||
+    /\bare\b/i.test(sentence)
+  ) {
+    score += 2;
+  }
 
-  return scored
-    .slice(0, maxIdeas)
-    .map(item => shortenSentence(item.sentence));
+  /* Numbers / dates */
+
+  if (/\d/.test(sentence)) {
+    score += 2;
+  }
+
+  /* Longer complete explanations */
+
+  if (sentence.length >= 50) {
+    score += 1;
+  }
+
+  /* Very long sentences are often less useful */
+
+  if (sentence.length > 230) {
+    score -= 2;
+  }
+
+  return score;
+
 }
 
 
-function shortenSentence(sentence) {
+function getImportantIdeas(text) {
 
-  const words = sentence.split(/\s+/);
+  const sentences =
+    getSentences(text)
+      .map(cleanSentence);
 
-  if (words.length <= 25) {
+  if (!sentences.length) {
+    return [];
+  }
+
+  const scored =
+    sentences.map(sentence => ({
+      sentence,
+      score: scoreSentence(sentence)
+    }));
+
+  scored.sort((a,b) => b.score - a.score);
+
+  /*
+    Don't dump everything.
+    Maximum 6 actual ideas.
+  */
+
+  const limit =
+    sentences.length <= 4
+      ? sentences.length
+      : 6;
+
+  return scored
+    .slice(0, limit)
+    .map(item => shorten(item.sentence));
+
+}
+
+
+function shorten(sentence) {
+
+  const words = sentence.split(" ");
+
+  if (words.length <= 28) {
     return sentence;
   }
 
-  return words.slice(0, 25).join(" ") + "...";
+  return words
+    .slice(0, 28)
+    .join(" ") + "...";
+
+}
+
+
+/* =========================
+   VOCABULARY DETECTION
+========================= */
+
+function findDefinitions(text) {
+
+  const sentences = getSentences(text);
+
+  const definitions = [];
+
+  sentences.forEach(sentence => {
+
+    const match =
+      sentence.match(
+        /^(.{2,60}?)\s+(?:is|are|means|refers to|is defined as)\s+(.{5,180})$/i
+      );
+
+    if (match) {
+
+      definitions.push({
+        term: match[1].trim(),
+        definition: match[2].trim()
+      });
+
+    }
+
+  });
+
+  return definitions.slice(0, 6);
+
 }
 
 
@@ -214,72 +381,121 @@ function shortenSentence(sentence) {
 
 function generateStudyGuide() {
 
-  const rawNotes = notesInput.value.trim();
+  const text = notes.value.trim();
 
-  if (rawNotes.length < 30) {
-    showError(
-      "Add a little more.",
-      "Paste at least a few sentences of notes so StudySnap can find the important ideas."
+  if (text.length < 30) {
+
+    showMessage(
+      "Add more notes",
+      "Paste a few complete sentences so StudySnap can analyze them."
     );
+
     return;
+
   }
 
-  const ideas = findImportantIdeas(rawNotes);
+  const ideas = getImportantIdeas(text);
+  const definitions = findDefinitions(text);
 
-  if (ideas.length === 0) {
-    showError(
-      "Couldn't find clear ideas.",
-      "Try adding complete sentences to your notes."
-    );
-    return;
-  }
-
-  outputTitle.textContent = "Study Guide";
-  outputSection.classList.remove("hidden");
+  resultTitle.textContent = "Study Guide";
 
   let html = `
-    <div class="study-summary">
+    <div class="summary-list">
+
+      <div class="summary-card">
+
+        <div class="number">QUICK SUMMARY</div>
+
+        <p>
+          ${escapeHTML(makeOverview(ideas))}
+        </p>
+
+      </div>
   `;
+
 
   ideas.forEach((idea, index) => {
 
     html += `
       <div class="summary-card">
 
-        <div class="summary-number">
+        <div class="number">
           KEY IDEA ${index + 1}
         </div>
 
-        <p>${escapeHTML(idea)}</p>
+        <p>
+          ${escapeHTML(idea)}
+        </p>
 
       </div>
     `;
 
   });
 
+
+  if (definitions.length) {
+
+    html += `
+      <div class="summary-card">
+
+        <div class="number">
+          VOCABULARY
+        </div>
+    `;
+
+    definitions.forEach(item => {
+
+      html += `
+        <p style="margin-bottom:10px;">
+          <strong>${escapeHTML(item.term)}</strong>
+          — ${escapeHTML(item.definition)}
+        </p>
+      `;
+
+    });
+
+    html += `</div>`;
+
+  }
+
+
   html += `
     </div>
 
-    <div class="review-box">
+    <div class="review">
 
-      <strong>QUICK REVIEW</strong>
+      <strong>LOCK-IN TIP</strong>
 
       <p>
-        Read these ideas once, hide your notes, and try to explain each one from memory.
+        Read the key ideas, hide your notes, and explain each one without looking.
       </p>
 
     </div>
   `;
 
-  output.innerHTML = html;
+  showResults(html);
 
-  saveStudySet("Study Guide");
+  saveCurrentSet("Study Guide");
+
   recordActivity();
 
-  outputSection.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
-  });
+}
+
+
+/* =========================
+   OVERVIEW
+========================= */
+
+function makeOverview(ideas) {
+
+  if (!ideas.length) {
+    return "Your notes contain useful information to review.";
+  }
+
+  return ideas
+    .slice(0, 2)
+    .join(" ");
+
 }
 
 
@@ -289,87 +505,59 @@ function generateStudyGuide() {
 
 function generateFlashcards() {
 
-  const rawNotes = notesInput.value.trim();
+  const text = notes.value.trim();
 
-  if (rawNotes.length < 30) {
-    showError(
-      "Add some notes first.",
-      "StudySnap needs material to make flashcards."
+  if (text.length < 30) {
+
+    showMessage(
+      "Add more notes",
+      "Paste some material before creating flashcards."
     );
+
     return;
+
   }
 
-  const ideas = findImportantIdeas(rawNotes);
+  const ideas = getImportantIdeas(text);
 
-  if (!ideas.length) {
-    showError(
-      "Couldn't make flashcards.",
-      "Try adding complete sentences to your notes."
+  flashcards = ideas.map((idea, index) => {
+
+    const definition =
+      findDefinitions(text)
+        .find(item =>
+          idea.toLowerCase()
+            .includes(item.term.toLowerCase())
+        );
+
+    if (definition) {
+
+      return {
+        question: `What is ${definition.term}?`,
+        answer: definition.definition
+      };
+
+    }
+
+    return {
+      question: `What is the main idea of point ${index + 1}?`,
+      answer: idea
+    };
+
+  });
+
+  if (!flashcards.length) {
+
+    showMessage(
+      "Couldn't create cards",
+      "Try adding clearer notes with complete sentences."
     );
+
     return;
+
   }
 
-  flashcards = ideas.map((idea, index) => ({
-    question: makeQuestion(idea, index),
-    answer: idea
-  }));
-
-  currentCard = 0;
+  flashcardIndex = 0;
   showingAnswer = false;
-
-  openFlashcardModal();
-}
-
-
-/* =========================
-   FLASHCARD QUESTION
-========================= */
-
-function makeQuestion(sentence, index) {
-
-  const lower = sentence.toLowerCase();
-
-  if (lower.includes(" is ")) {
-
-    const parts = sentence.split(/\s+is\s+/i);
-
-    if (parts.length === 2) {
-      return `What is ${parts[0].replace(/^the\s+/i, "")}?`;
-    }
-
-  }
-
-  if (lower.includes(" are ")) {
-
-    const parts = sentence.split(/\s+are\s+/i);
-
-    if (parts.length === 2) {
-      return `What are ${parts[0].replace(/^the\s+/i, "")}?`;
-    }
-
-  }
-
-  if (lower.includes("because")) {
-    return "Why is this important?";
-  }
-
-  if (
-    lower.includes("causes") ||
-    lower.includes("caused") ||
-    lower.includes("results")
-  ) {
-    return "What does this cause or result in?";
-  }
-
-  return `What is the main idea from key point ${index + 1}?`;
-}
-
-
-/* =========================
-   FLASHCARD MODAL
-========================= */
-
-function openFlashcardModal() {
 
   document
     .getElementById("flashcardModal")
@@ -378,234 +566,481 @@ function openFlashcardModal() {
   renderFlashcard();
 
   recordActivity();
+
 }
 
 
-function closeModal() {
-
-  document
-    .getElementById("flashcardModal")
-    .classList.add("hidden");
-}
-
+/* =========================
+   FLASHCARD RENDER
+========================= */
 
 function renderFlashcard() {
 
-  if (!flashcards.length) {
-    return;
-  }
-
-  const card = flashcards[currentCard];
+  const card =
+    flashcards[flashcardIndex];
 
   const content =
     document.getElementById("flashcardContent");
 
-  document.getElementById("cardNumber").textContent =
-    `${currentCard + 1} / ${flashcards.length}`;
+  document
+    .getElementById("flashcardNumber")
+    .textContent =
+    `${flashcardIndex + 1} / ${flashcards.length}`;
+
 
   if (!showingAnswer) {
 
     content.innerHTML = `
-      <div class="flashcard-main">
+      <div class="flashcard-body">
 
-        <div class="label">QUESTION</div>
+        <div>
 
-        <h2>
-          ${escapeHTML(card.question)}
-        </h2>
+          <div class="eyebrow">
+            QUESTION
+          </div>
 
-        <p>
-          Think of the answer before revealing it.
-        </p>
+          <h2>
+            ${escapeHTML(card.question)}
+          </h2>
+
+          <p>
+            Think of the answer before revealing it.
+          </p>
+
+        </div>
 
       </div>
     `;
 
-    document.getElementById("nextCardBtn").textContent =
-      "Reveal Answer";
+    document
+      .getElementById("flashcardAction")
+      .textContent = "Reveal Answer";
 
   } else {
 
     content.innerHTML = `
-      <div class="flashcard-main">
+      <div class="flashcard-body">
 
-        <div class="label">ANSWER</div>
+        <div>
 
-        <h2>
-          ${escapeHTML(card.answer)}
-        </h2>
+          <div class="eyebrow">
+            ANSWER
+          </div>
+
+          <h2>
+            ${escapeHTML(card.answer)}
+          </h2>
+
+        </div>
 
       </div>
     `;
 
-    if (currentCard === flashcards.length - 1) {
-      document.getElementById("nextCardBtn").textContent =
-        "Finish";
-    } else {
-      document.getElementById("nextCardBtn").textContent =
-        "Next →";
-    }
+    document
+      .getElementById("flashcardAction")
+      .textContent =
+      flashcardIndex === flashcards.length - 1
+        ? "Finish"
+        : "Next →";
 
   }
-}
 
-
-function nextCard() {
-
-  if (!showingAnswer) {
-
-    showingAnswer = true;
-    renderFlashcard();
-
-    return;
-  }
-
-  if (currentCard < flashcards.length - 1) {
-
-    currentCard++;
-    showingAnswer = false;
-
-    renderFlashcard();
-
-  } else {
-
-    closeModal();
-
-    alert("Flashcards completed 🔥");
-
-  }
 }
 
 
 /* =========================
-   QUIZ
+   FLASHCARD BUTTON
+========================= */
+
+document
+  .getElementById("flashcardAction")
+  .addEventListener("click", () => {
+
+    if (!showingAnswer) {
+
+      showingAnswer = true;
+      renderFlashcard();
+
+      return;
+
+    }
+
+    if (flashcardIndex < flashcards.length - 1) {
+
+      flashcardIndex++;
+      showingAnswer = false;
+
+      renderFlashcard();
+
+    } else {
+
+      document
+        .getElementById("flashcardModal")
+        .classList.add("hidden");
+
+    }
+
+  });
+
+
+document
+  .getElementById("closeFlashcards")
+  .addEventListener("click", () => {
+
+    document
+      .getElementById("flashcardModal")
+      .classList.add("hidden");
+
+  });
+
+
+/* =========================
+   QUIZ GENERATION
 ========================= */
 
 function generateQuiz() {
 
-  const rawNotes = notesInput.value.trim();
+  const text = notes.value.trim();
 
-  if (rawNotes.length < 30) {
-    showError(
-      "Add some notes first.",
-      "StudySnap needs material to create a quiz."
+  if (text.length < 30) {
+
+    showMessage(
+      "Add more notes",
+      "Paste some material before creating a quiz."
     );
+
     return;
+
   }
 
-  const ideas = findImportantIdeas(rawNotes);
+  const ideas = getImportantIdeas(text);
 
-  if (!ideas.length) {
-    showError(
-      "Couldn't make a quiz.",
-      "Try adding complete sentences to your notes."
+  if (ideas.length < 2) {
+
+    showMessage(
+      "Need more information",
+      "Add a few more complete sentences for a better quiz."
     );
+
     return;
+
   }
 
-  outputTitle.textContent = "Practice Quiz";
-  outputSection.classList.remove("hidden");
+  quizQuestions =
+    ideas.slice(0, 5).map((idea, index) => {
+
+      const wrongAnswers =
+        ideas
+          .filter((_, i) => i !== index)
+          .slice(0, 3);
+
+      const choices =
+        shuffle([
+          idea,
+          ...wrongAnswers
+        ]);
+
+      return {
+        question:
+          `Which statement best matches key concept ${index + 1}?`,
+        correct: idea,
+        choices
+      };
+
+    });
+
+  quizIndex = 0;
+  quizScore = 0;
+
+  renderQuiz();
+
+}
+
+
+/* =========================
+   QUIZ RENDER
+========================= */
+
+function renderQuiz() {
+
+  resultTitle.textContent = "Practice Quiz";
+
+  results.classList.remove("hidden");
+
+  const question =
+    quizQuestions[quizIndex];
 
   let html = `
-    <div class="study-summary">
+    <div class="quiz-card">
+
+      <div class="quiz-label">
+        QUESTION ${quizIndex + 1} / ${quizQuestions.length}
+      </div>
+
+      <div class="quiz-question">
+        ${escapeHTML(question.question)}
+      </div>
   `;
 
-  ideas.slice(0, 5).forEach((idea, index) => {
+
+  question.choices.forEach(choice => {
 
     html += `
-      <div class="summary-card">
-
-        <div class="summary-number">
-          QUESTION ${index + 1}
-        </div>
-
-        <p>
-          Explain this idea in your own words:
-        </p>
-
-        <br>
-
-        <p style="color:#777e87;">
-          ${escapeHTML(idea)}
-        </p>
-
-      </div>
+      <button
+        class="answer-btn"
+        data-answer="${encodeURIComponent(choice)}"
+      >
+        ${escapeHTML(choice)}
+      </button>
     `;
 
   });
 
-  html += `
-    </div>
 
-    <div class="review-box">
+  html += `</div>`;
 
-      <strong>QUIZ TIP</strong>
+  resultContent.innerHTML = html;
 
-      <p>
-        Answer without looking at your notes. If you can't explain it, review that idea again.
-      </p>
 
-    </div>
-  `;
+  document
+    .querySelectorAll(".answer-btn")
+    .forEach(button => {
 
-  output.innerHTML = html;
+      button.addEventListener("click", () => {
 
-  saveStudySet("Practice Quiz");
-  recordActivity();
+        const answer =
+          decodeURIComponent(
+            button.dataset.answer
+          );
 
-  outputSection.scrollIntoView({
+        checkAnswer(answer);
+
+      });
+
+    });
+
+
+  results.scrollIntoView({
     behavior: "smooth",
     block: "start"
   });
+
 }
 
 
 /* =========================
-   SAVE STUDY SET
+   QUIZ CHECK
 ========================= */
 
-function saveStudySet(type) {
+function checkAnswer(answer) {
 
-  const notes = notesInput.value.trim();
+  const question =
+    quizQuestions[quizIndex];
 
-  if (!notes) {
+  const buttons =
+    document.querySelectorAll(".answer-btn");
+
+  buttons.forEach(button => {
+
+    button.disabled = true;
+
+    const buttonAnswer =
+      decodeURIComponent(
+        button.dataset.answer
+      );
+
+    if (buttonAnswer === question.correct) {
+      button.classList.add("correct");
+    }
+
+    if (
+      buttonAnswer === answer &&
+      answer !== question.correct
+    ) {
+      button.classList.add("wrong");
+    }
+
+  });
+
+
+  if (answer === question.correct) {
+    quizScore++;
+  }
+
+
+  setTimeout(() => {
+
+    quizIndex++;
+
+    if (quizIndex < quizQuestions.length) {
+
+      renderQuiz();
+
+    } else {
+
+      finishQuiz();
+
+    }
+
+  }, 800);
+
+}
+
+
+/* =========================
+   QUIZ RESULTS
+========================= */
+
+function finishQuiz() {
+
+  const percent =
+    Math.round(
+      (quizScore / quizQuestions.length) * 100
+    );
+
+  if (percent > bestScore) {
+
+    bestScore = percent;
+
+    localStorage.setItem(
+      "studysnap_best_score",
+      bestScore
+    );
+
+  }
+
+  resultTitle.textContent = "Quiz Complete";
+
+  resultContent.innerHTML = `
+
+    <div class="quiz-score">
+
+      <div class="eyebrow">
+        FINAL SCORE
+      </div>
+
+      <strong>
+        ${percent}%
+      </strong>
+
+      <p>
+        You got ${quizScore} out of
+        ${quizQuestions.length} correct.
+      </p>
+
+      <br>
+
+      <button
+        class="primary"
+        id="retryQuiz"
+      >
+        Try Again
+      </button>
+
+    </div>
+
+  `;
+
+  document
+    .getElementById("retryQuiz")
+    .addEventListener("click", () => {
+
+      quizIndex = 0;
+      quizScore = 0;
+
+      renderQuiz();
+
+    });
+
+  saveCurrentSet("Practice Quiz");
+
+  recordActivity();
+
+}
+
+
+/* =========================
+   RESULTS
+========================= */
+
+function showResults(html) {
+
+  resultContent.innerHTML = html;
+
+  results.classList.remove("hidden");
+
+  results.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
+
+}
+
+
+function showMessage(title, message) {
+
+  resultTitle.textContent = "StudySnap";
+
+  showResults(`
+    <div class="review">
+
+      <strong>
+        ${escapeHTML(title)}
+      </strong>
+
+      <p>
+        ${escapeHTML(message)}
+      </p>
+
+    </div>
+  `);
+
+}
+
+
+/* =========================
+   SAVE SET
+========================= */
+
+function saveCurrentSet(type) {
+
+  const text = notes.value.trim();
+
+  if (!text) {
     return;
   }
 
   const name =
-    setNameInput.value.trim() ||
+    setName.value.trim() ||
     "Untitled Study Set";
 
-  const studySet = {
+  studySets.unshift({
 
     id: Date.now(),
 
-    name: name,
+    name,
 
-    type: type,
+    type,
 
-    notes: notes,
+    notes: text,
 
     date: new Date().toLocaleDateString()
 
-  };
+  });
 
-  studySets.unshift(studySet);
+  studySets =
+    studySets.slice(0, 50);
 
-  /*
-    Keep the library from growing forever.
-  */
-  studySets = studySets.slice(0, 50);
-
-  localStorage.setItem(
+  save(
     "studysnap_sets",
-    JSON.stringify(studySets)
+    studySets
   );
+
 }
 
 
 /* =========================
-   STUDY SET LIBRARY
+   SET LIBRARY
 ========================= */
 
 function renderSets() {
@@ -618,43 +1053,65 @@ function renderSets() {
     container.innerHTML = `
       <div class="empty">
 
-        <div class="empty-icon">▣</div>
-
         <h3>No study sets yet.</h3>
 
-        <p>Create your first one from the dashboard.</p>
+        <p>Create one from the dashboard.</p>
 
       </div>
     `;
 
     return;
+
   }
 
-  container.innerHTML = studySets.map(set => {
+  container.innerHTML =
+    studySets.map(set => `
 
-    return `
       <div class="set-card">
 
         <h3>
           ${escapeHTML(set.name)}
         </h3>
 
-        <div class="set-meta">
+        <small>
           ${escapeHTML(set.type)}
           ·
           ${escapeHTML(set.date)}
-        </div>
+        </small>
 
-        <button onclick="openSet(${set.id})">
+        <br>
+
+        <button
+          data-open-set="${set.id}"
+        >
           Open Set →
         </button>
 
       </div>
-    `;
 
-  }).join("");
+    `).join("");
+
+
+  document
+    .querySelectorAll("[data-open-set]")
+    .forEach(button => {
+
+      button.addEventListener("click", () => {
+
+        openSet(
+          Number(button.dataset.openSet)
+        );
+
+      });
+
+    });
+
 }
 
+
+/* =========================
+   OPEN SET
+========================= */
 
 function openSet(id) {
 
@@ -665,23 +1122,22 @@ function openSet(id) {
     return;
   }
 
-  setNameInput.value = set.name;
-  notesInput.value = set.notes;
+  notes.value = set.notes;
+  setName.value = set.name;
 
-  charCount.textContent =
+  document.getElementById("charCount")
+    .textContent =
     set.notes.length.toLocaleString();
 
-  showPage("dashboard");
+  document
+    .querySelector('[data-page="dashboard"]')
+    .click();
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
 }
 
 
 /* =========================
-   PROGRESS
+   ACTIVITY
 ========================= */
 
 function recordActivity() {
@@ -693,25 +1149,37 @@ function recordActivity() {
     activities
   );
 
-  updateProgress();
+  updateStats();
+
 }
 
 
-function updateProgress() {
+/* =========================
+   STATS
+========================= */
 
-  document.getElementById("progressSets").textContent =
-    studySets.length;
+function updateStats() {
 
-  document.getElementById("progressActivities").textContent =
-    activities;
+  document.getElementById("setsStat")
+    .textContent = studySets.length;
 
-  document.getElementById("progressQuizzes").textContent =
-    studySets.filter(
-      set => set.type === "Practice Quiz"
-    ).length;
+  document.getElementById("activityStat")
+    .textContent = activities;
 
-  document.getElementById("streak").textContent =
+  document.getElementById("scoreStat")
+    .textContent =
+    bestScore ? `${bestScore}%` : "—";
+
+  document.getElementById("profileSets")
+    .textContent = studySets.length;
+
+  document.getElementById("profileActivities")
+    .textContent = activities;
+
+  document.getElementById("streak")
+    .textContent =
     activities > 0 ? "1" : "0";
+
 }
 
 
@@ -719,80 +1187,91 @@ function updateProgress() {
    COPY
 ========================= */
 
-function copyResult() {
+document
+  .getElementById("copyButton")
+  .addEventListener("click", async () => {
 
-  const text = output.innerText.trim();
+    const text =
+      resultContent.innerText.trim();
 
-  if (!text) {
-    return;
-  }
+    if (!text) {
+      return;
+    }
 
-  navigator.clipboard.writeText(text)
-    .then(() => {
+    try {
+
+      await navigator.clipboard.writeText(text);
 
       const button =
-        document.querySelector(".copy-btn");
-
-      const oldText = button.textContent;
+        document.getElementById("copyButton");
 
       button.textContent = "Copied ✓";
 
       setTimeout(() => {
-        button.textContent = oldText;
+        button.textContent = "Copy";
       }, 1500);
 
-    })
-    .catch(() => {
-      alert("Couldn't copy automatically.");
-    });
-}
+    } catch {
 
+      alert("Copy failed.");
 
-/* =========================
-   ERROR MESSAGE
-========================= */
+    }
 
-function showError(title, message) {
-
-  outputTitle.textContent = "StudySnap";
-  outputSection.classList.remove("hidden");
-
-  output.innerHTML = `
-    <div class="review-box">
-
-      <strong>${escapeHTML(title)}</strong>
-
-      <p>
-        ${escapeHTML(message)}
-      </p>
-
-    </div>
-  `;
-
-  outputSection.scrollIntoView({
-    behavior: "smooth",
-    block: "start"
   });
+
+
+/* =========================
+   SHUFFLE
+========================= */
+
+function shuffle(array) {
+
+  const result = [...array];
+
+  for (
+    let i = result.length - 1;
+    i > 0;
+    i--
+  ) {
+
+    const j =
+      Math.floor(Math.random() * (i + 1));
+
+    [
+      result[i],
+      result[j]
+    ] =
+    [
+      result[j],
+      result[i]
+    ];
+
+  }
+
+  return result;
+
 }
 
 
 /* =========================
-   SECURITY
+   ESCAPE HTML
 ========================= */
 
-function escapeHTML(text) {
+function escapeHTML(value) {
 
-  return String(text)
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+
 }
 
 
 /* =========================
-   STARTUP
+   START
 ========================= */
 
-updateProgress();
+updateStats();
+renderSets();
