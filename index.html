@@ -1,1 +1,229 @@
-h
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>StudySnap — Study Smarter</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="navbar">
+    <div class="logo">Study<span>Snap</span> 📚</div>
+
+    <button class="nav-button" onclick="scrollToApp()">
+      Try it free
+    </button>
+  </header>
+
+
+  <main>
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+      <div class="badge">
+        ✨ Your notes → a better study session
+      </div>
+
+      <h1>
+        Study smarter.<br>
+        <span>Not harder.</span>
+      </h1>
+
+      <p>
+        Paste your class notes and turn them into a clean study guide,
+        key terms, and practice questions.
+      </p>
+
+      <button class="hero-button" onclick="scrollToApp()">
+        Start studying →
+      </button>
+
+    </section>
+
+
+    <!-- APP -->
+
+    <section class="app-section" id="app">
+
+      <div class="app-card">
+
+        <div class="app-header">
+          <div>
+            <p class="eyebrow">STUDYSNAP</p>
+            <h2>Your notes</h2>
+          </div>
+
+          <span class="free-badge">FREE</span>
+        </div>
+
+
+        <textarea
+          id="notes"
+          placeholder="Paste your class notes here...
+
+Example:
+
+Cellular respiration is the process cells use to release energy from glucose.
+
+It occurs mainly in the mitochondria.
+
+The overall equation uses glucose and oxygen and produces carbon dioxide, water, and ATP."
+        ></textarea>
+
+
+        <div class="button-row">
+
+          <button
+            class="primary-button"
+            onclick="generateStudyGuide()"
+          >
+            ✨ Study Guide
+          </button>
+
+          <button
+            class="secondary-button"
+            onclick="generateQuiz()"
+          >
+            🧠 Quiz
+          </button>
+
+          <button
+            class="secondary-button"
+            onclick="clearNotes()"
+          >
+            Clear
+          </button>
+
+        </div>
+
+      </div>
+
+
+      <!-- OUTPUT -->
+
+      <div class="output-card">
+
+        <div class="output-header">
+
+          <div>
+            <p class="eyebrow">RESULT</p>
+            <h2>Your study material</h2>
+          </div>
+
+          <button
+            class="copy-button"
+            onclick="copyResult()"
+          >
+            Copy
+          </button>
+
+        </div>
+
+
+        <div
+          id="output"
+          class="output"
+        >
+          <div class="empty-state">
+
+            <div class="empty-icon">
+              ✨
+            </div>
+
+            <h3>Nothing here yet</h3>
+
+            <p>
+              Paste your notes above and choose
+              <strong>Study Guide</strong> or
+              <strong>Quiz</strong>.
+            </p>
+
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- FEATURES -->
+
+    <section class="features">
+
+      <div class="section-heading">
+        <p class="eyebrow">WHY STUDYSNAP?</p>
+
+        <h2>
+          Everything you need<br>
+          to review faster.
+        </h2>
+      </div>
+
+
+      <div class="feature-grid">
+
+        <div class="feature">
+          <div class="feature-icon">📖</div>
+
+          <h3>Study Guides</h3>
+
+          <p>
+            Turn messy notes into organized
+            key ideas that are easier to review.
+          </p>
+        </div>
+
+
+        <div class="feature">
+          <div class="feature-icon">🧠</div>
+
+          <h3>Practice Quizzes</h3>
+
+          <p>
+            Test yourself instead of just
+            rereading your notes.
+          </p>
+        </div>
+
+
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+
+          <h3>Fast Review</h3>
+
+          <p>
+            Find the important information
+            without digging through pages of notes.
+          </p>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <footer>
+
+    <div class="logo">
+      Study<span>Snap</span> 📚
+    </div>
+
+    <p>
+      Built for students who want to study smarter.
+    </p>
+
+  </footer>
+
+
+  <script src="app.js"></script>
+
+</body>
+</html>
