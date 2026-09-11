@@ -1,1 +1,0 @@
-# StudySnap
