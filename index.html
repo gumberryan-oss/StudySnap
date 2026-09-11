@@ -3,63 +3,104 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>StudySnap — Study Smarter</title>
-
+  <title>StudySnap</title>
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <header class="navbar">
-    <div class="logo">Study<span>Snap</span> 📚</div>
+<div class="app">
 
-    <button class="nav-button" onclick="scrollToApp()">
-      Try it free
-    </button>
-  </header>
+  <aside class="sidebar">
+    <div class="brand">Study<span>Snap</span> 📚</div>
+
+    <nav>
+      <button class="nav-item active" onclick="showPage('dashboard', this)">🏠 Dashboard</button>
+      <button class="nav-item" onclick="showPage('sets', this)">📚 Study Sets</button>
+      <button class="nav-item" onclick="showPage('flashcards', this)">🧠 Flashcards</button>
+      <button class="nav-item" onclick="showPage('quizzes', this)">📝 Quizzes</button>
+      <button class="nav-item" onclick="showPage('progress', this)">📊 Progress</button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <button class="nav-item" onclick="showPage('settings', this)">⚙️ Settings</button>
+      <div class="pro-box">
+        <strong>StudySnap Pro</strong>
+        <p>Unlock unlimited studying.</p>
+        <button onclick="alert('Pro is coming soon!')">View Pro →</button>
+      </div>
+    </div>
+  </aside>
 
 
-  <main>
+  <main class="main">
 
-    <!-- HERO -->
-
-    <section class="hero">
-
-      <div class="badge">
-        ✨ Your notes → a better study session
+    <header class="topbar">
+      <div>
+        <div class="mobile-brand">StudySnap 📚</div>
       </div>
 
-      <h1>
-        Study smarter.<br>
-        <span>Not harder.</span>
-      </h1>
-
-      <p>
-        Paste your class notes and turn them into a clean study guide,
-        key terms, and practice questions.
-      </p>
-
-      <button class="hero-button" onclick="scrollToApp()">
-        Start studying →
+      <button class="profile" onclick="showPage('settings')">
+        <span>👤</span>
+        <div>
+          <strong>Student</strong>
+          <small>Free Plan</small>
+        </div>
       </button>
+    </header>
 
-    </section>
+
+    <!-- DASHBOARD -->
+
+    <section id="dashboard" class="page active-page">
+
+      <div class="welcome">
+        <div>
+          <p class="eyebrow">DASHBOARD</p>
+          <h1>Ready to lock in? 🔥</h1>
+          <p>Turn your notes into a smarter study session.</p>
+        </div>
+      </div>
 
 
-    <!-- APP -->
+      <div class="stats">
 
-    <section class="app-section" id="app">
+        <div class="stat">
+          <span>🔥</span>
+          <strong id="streak">0</strong>
+          <small>Day streak</small>
+        </div>
 
-      <div class="app-card">
+        <div class="stat">
+          <span>📚</span>
+          <strong id="setCount">0</strong>
+          <small>Study sets</small>
+        </div>
 
-        <div class="app-header">
+        <div class="stat">
+          <span>🧠</span>
+          <strong id="cardCount">0</strong>
+          <small>Cards studied</small>
+        </div>
+
+        <div class="stat">
+          <span>🎯</span>
+          <strong id="quizCount">0</strong>
+          <small>Quizzes taken</small>
+        </div>
+
+      </div>
+
+
+      <div class="generator">
+
+        <div class="generator-header">
           <div>
-            <p class="eyebrow">STUDYSNAP</p>
-            <h2>Your notes</h2>
+            <p class="eyebrow">STUDY GENERATOR</p>
+            <h2>Turn notes into study material</h2>
           </div>
 
-          <span class="free-badge">FREE</span>
+          <span class="free-tag">FREE</span>
         </div>
 
 
@@ -68,83 +109,46 @@
           placeholder="Paste your class notes here...
 
 Example:
-
-Cellular respiration is the process cells use to release energy from glucose.
-
-It occurs mainly in the mitochondria.
-
-The overall equation uses glucose and oxygen and produces carbon dioxide, water, and ATP."
+Cellular respiration is the process cells use to release energy from glucose. It occurs mainly in the mitochondria. Glucose and oxygen are reactants. Carbon dioxide, water, and ATP are products."
         ></textarea>
 
 
-        <div class="button-row">
+        <input
+          id="setName"
+          type="text"
+          placeholder="Study set name (optional)"
+        >
 
-          <button
-            class="primary-button"
-            onclick="generateStudyGuide()"
-          >
-            ✨ Study Guide
-          </button>
 
-          <button
-            class="secondary-button"
-            onclick="generateQuiz()"
-          >
-            🧠 Quiz
-          </button>
-
-          <button
-            class="secondary-button"
-            onclick="clearNotes()"
-          >
-            Clear
-          </button>
-
+        <div class="generator-buttons">
+          <button class="primary" onclick="generateStudyGuide()">✨ Study Guide</button>
+          <button class="secondary" onclick="generateFlashcards()">🧠 Flashcards</button>
+          <button class="secondary" onclick="generateQuiz()">📝 Quiz</button>
+          <button class="ghost" onclick="clearGenerator()">Clear</button>
         </div>
 
       </div>
 
 
-      <!-- OUTPUT -->
+      <div class="result-card">
 
-      <div class="output-card">
-
-        <div class="output-header">
-
+        <div class="result-top">
           <div>
             <p class="eyebrow">RESULT</p>
             <h2>Your study material</h2>
           </div>
 
-          <button
-            class="copy-button"
-            onclick="copyResult()"
-          >
-            Copy
-          </button>
-
+          <button class="copy-btn" onclick="copyResult()">Copy</button>
         </div>
 
+        <div id="output">
 
-        <div
-          id="output"
-          class="output"
-        >
-          <div class="empty-state">
-
-            <div class="empty-icon">
-              ✨
-            </div>
-
+          <div class="empty">
+            <div>✨</div>
             <h3>Nothing here yet</h3>
-
-            <p>
-              Paste your notes above and choose
-              <strong>Study Guide</strong> or
-              <strong>Quiz</strong>.
-            </p>
-
+            <p>Paste your notes and choose a study mode.</p>
           </div>
+
         </div>
 
       </div>
@@ -152,55 +156,108 @@ The overall equation uses glucose and oxygen and produces carbon dioxide, water,
     </section>
 
 
-    <!-- FEATURES -->
+    <!-- STUDY SETS -->
 
-    <section class="features">
+    <section id="sets" class="page">
 
-      <div class="section-heading">
-        <p class="eyebrow">WHY STUDYSNAP?</p>
-
-        <h2>
-          Everything you need<br>
-          to review faster.
-        </h2>
+      <div class="page-title">
+        <p class="eyebrow">LIBRARY</p>
+        <h1>Study Sets</h1>
+        <p>Your saved study material.</p>
       </div>
 
+      <div id="setsContainer" class="set-grid"></div>
 
-      <div class="feature-grid">
+    </section>
 
-        <div class="feature">
-          <div class="feature-icon">📖</div>
 
-          <h3>Study Guides</h3>
+    <!-- FLASHCARDS -->
 
-          <p>
-            Turn messy notes into organized
-            key ideas that are easier to review.
-          </p>
+    <section id="flashcards" class="page">
+
+      <div class="page-title">
+        <p class="eyebrow">MEMORY</p>
+        <h1>Flashcards</h1>
+        <p>Practice concepts using active recall.</p>
+      </div>
+
+      <div id="flashcardArea" class="flashcard-area">
+        <div class="empty">
+          <div>🧠</div>
+          <h3>No flashcards yet</h3>
+          <p>Create flashcards from your notes on the Dashboard.</p>
         </div>
+      </div>
+
+    </section>
 
 
-        <div class="feature">
-          <div class="feature-icon">🧠</div>
+    <!-- QUIZZES -->
 
-          <h3>Practice Quizzes</h3>
+    <section id="quizzes" class="page">
 
-          <p>
-            Test yourself instead of just
-            rereading your notes.
-          </p>
+      <div class="page-title">
+        <p class="eyebrow">PRACTICE</p>
+        <h1>Quizzes</h1>
+        <p>Test yourself instead of rereading everything.</p>
+      </div>
+
+      <div id="quizArea">
+        <div class="empty">
+          <div>📝</div>
+          <h3>No quiz yet</h3>
+          <p>Create one from the Dashboard.</p>
         </div>
+      </div>
+
+    </section>
 
 
-        <div class="feature">
-          <div class="feature-icon">⚡</div>
+    <!-- PROGRESS -->
 
-          <h3>Fast Review</h3>
+    <section id="progress" class="page">
 
-          <p>
-            Find the important information
-            without digging through pages of notes.
-          </p>
+      <div class="page-title">
+        <p class="eyebrow">YOUR STATS</p>
+        <h1>Progress 📊</h1>
+        <p>Keep track of your studying.</p>
+      </div>
+
+      <div class="progress-card">
+        <h2>Keep going.</h2>
+        <div class="progress-number" id="progressNumber">0</div>
+        <p>total study activities</p>
+
+        <div class="progress-bar">
+          <div id="progressFill"></div>
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- SETTINGS -->
+
+    <section id="settings" class="page">
+
+      <div class="page-title">
+        <p class="eyebrow">ACCOUNT</p>
+        <h1>Settings ⚙️</h1>
+      </div>
+
+      <div class="settings-card">
+
+        <h2>Account</h2>
+
+        <div class="setting-row">
+          <div>
+            <strong>Google Sign-In</strong>
+            <p>Coming in the next update.</p>
+          </div>
+
+          <button class="secondary" onclick="alert('Google sign-in is coming in v2.1!')">
+            Connect
+          </button>
         </div>
 
       </div>
@@ -209,21 +266,9 @@ The overall equation uses glucose and oxygen and produces carbon dioxide, water,
 
   </main>
 
+</div>
 
-  <footer>
-
-    <div class="logo">
-      Study<span>Snap</span> 📚
-    </div>
-
-    <p>
-      Built for students who want to study smarter.
-    </p>
-
-  </footer>
-
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>
